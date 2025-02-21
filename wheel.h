@@ -3,7 +3,7 @@
 #include "C12832.h"
 
 #define PWM_FREQUENCY 30000
-#define WHEEL_DIAMETER 50
+#define WHEEL_DIAMETER 75
 
 #define SPEED_KP 1
 #define SPEED_KI 0

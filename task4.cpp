@@ -44,8 +44,8 @@ void forward(float distance /* in mm */) {
     R.setPower(0.5);
 
     int pulses = distance * (256.0f / (WHEEL_DIAMETER * 3.14f));
-    int targetL = 100;//L.encoder.getPulses() + pulses;
-    int targetR = 100;//R.encoder.getPulses() + pulses;
+    int targetL = L.encoder.getPulses() + pulses;
+    int targetR = R.encoder.getPulses() + pulses;
     
     while (L.encoder.getPulses() < targetL || R.encoder.getPulses() < targetR) {
         if (L.encoder.getPulses() >= targetL ) L.setPower(0);
@@ -99,7 +99,7 @@ void task4()
    
    lcd.locate(8,10);
     
-         forward(100);
+         square();
     
 
 }

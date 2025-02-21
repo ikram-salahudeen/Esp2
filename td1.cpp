@@ -15,10 +15,13 @@ int main() {
 
     DigitalIn up(A2);
     DigitalIn down(A3);
+    DigitalIn left(A4);
     DigitalIn right(A5);
 
     lcd.locate(0, 0);
-    lcd.printf("Task 2(Up), Task 3(Down), Task 4(right)");
+    lcd.printf("Task 2(Up), Task 3(Down)");
+    lcd.locate(0, 15);
+    lcd.printf("Task 4(right), Test(Left)");
     while(true) {
         if (up.read() == 1) {
             task2();
@@ -28,6 +31,9 @@ int main() {
         }
         if (right.read() == 1) {
             task4();
+        }
+        if (left.read() == 1) {
+            
         }
     }
 }

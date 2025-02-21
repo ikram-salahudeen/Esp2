@@ -102,6 +102,7 @@ void task2()
         L.direction.write(1);
         L.bipolar.write(1);
         L.pwm.write(duty_cycle_left);
+        
         R.direction.write(1);
         R.bipolar.write(1);
         R.pwm.write(duty_cycle_right);
