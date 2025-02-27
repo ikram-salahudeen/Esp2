@@ -23,3 +23,7 @@
 
 #define ENCODER_R_A PC_4
 #define ENCODER_R_B PC_8
+
+#define LINE_SENSE_PINS {NC, NC, NC, NC, NC}
+
+#define LINE_LED_PINS {NC, NC, NC, NC, NC}
