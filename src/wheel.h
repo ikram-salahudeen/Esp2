@@ -1,6 +1,7 @@
 #include "mbed.h"
 #include "QEI.h"
 #include "C12832.h"
+#include "td1.h"
 
 #define PWM_FREQUENCY 30000
 #define WHEEL_DIAMETER 75
@@ -26,6 +27,9 @@ class Wheel {
     Mode mode;
     float frequency;
     
+    float targetSpeed;
+    Ticker speedTicker;
+    bool useSpeedControl;
     
    
 
@@ -71,27 +75,7 @@ public:
     float getFrequncy() { return frequency; };
 
     void speedControlISR() {
-        if (useSpeedControl == false) return;
-
-        static int previousPulses = 0;
-        static float previousTime = 0;
-
-        float newTime = timer.read();
-        int newPulses = encoder.getPulses();
-
-        previousPulses = newPulses;
-        previousTime = newTime;
-
-
-        float calculatedSpeed = ((newPulses - previousPulses) * WHEEL_DIAMETER * 3.14f) / (256 * (newTime - previousTime));
-        float speedError = targetSpeed - calculatedSpeed;
-
-        static float integral = 0;
-        integral += speedError * (SPEED_CONTROL_PERIOD_MS / 1000.0f);
-
-        float stimulus = SPEED_KP * speedError + SPEED_KI * integral;
-
-        setPower(stimulus);
+       
     }
 
     void setSpeed(float speed) {
@@ -100,9 +84,6 @@ public:
     }
 
 private:
-    float targetSpeed;
-    Ticker speedTicker;
-    bool useSpeedControl;
 
     void update() {
         if (mode == Bipolar) {

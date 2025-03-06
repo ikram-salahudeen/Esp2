@@ -18,7 +18,7 @@ char buffer[256];
 int buffer_length = 0;
 
 
-int main() {
+void td1() {
     timer.start();
 
     DigitalIn up(A2);

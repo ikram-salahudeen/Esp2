@@ -9,7 +9,7 @@ struct PID {
     const float* current;
 
     float* stimulus;
-    float stimulusMiddle, stimulusMin, stimulusEnd;
+    float stimulusMin, stimulusMax;
 
     void update(float t /* seconds*/ );
 };
