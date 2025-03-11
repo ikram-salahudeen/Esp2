@@ -2,6 +2,7 @@
 #include "QEI.h"
 #include "C12832.h"
 #include "td1.h"
+#include "pid.h"
 
 #define PWM_FREQUENCY 30000
 #define WHEEL_DIAMETER 75
@@ -28,8 +29,11 @@ class Wheel {
     float frequency;
     
     float targetSpeed;
+    float currentSpeed;
     Ticker speedTicker;
     bool useSpeedControl;
+    float Ts;
+    PID pid;
     
    
 
@@ -48,7 +52,13 @@ public:
         pwm(pwmPin), direction(directionPin), bipolar(bipolarPin), frequency(frequency),
         encoder(encoder1, encoder2, NC, 256, QEI::X4_ENCODING), power(0), useSpeedControl(false) {
         pwm.period(1/frequency);
-        speedTicker.attach(callback(this, &Wheel::speedControlISR), SPEED_CONTROL_PERIOD_MS / 1000.0f);
+        speedTicker.attach(callback(this, &Wheel::speedControlISR), Ts);
+
+        pid.Kp = &bt.params["Kp"];
+        pid.Ki = &bt.params["Ki"];
+        pid.Kd = &bt.params["Kd"];
+
+        pid.current = &
         //pwm.suspend();
     };
 
@@ -75,7 +85,7 @@ public:
     float getFrequncy() { return frequency; };
 
     void speedControlISR() {
-       
+       pid.update(Ts)
     }
 
     void setSpeed(float speed) {
