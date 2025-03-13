@@ -18,11 +18,11 @@
 #define MOTOR_R_CUR_SENSE1
 
 
-#define ENCODER_L_A PB_1
-#define ENCODER_L_B PC_9
+#define ENCODER_L_A PB_15
+#define ENCODER_L_B PB_4
 
-#define ENCODER_R_A PC_4
-#define ENCODER_R_B PC_8
+#define ENCODER_R_A PB_13
+#define ENCODER_R_B PB_3
 
 #define LINE_SENSE_PINS {NC, NC, NC, NC, NC}
 
