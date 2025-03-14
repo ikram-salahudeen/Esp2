@@ -21,8 +21,6 @@ struct Controller {
     Wheel L, R;
     
 
-
-
     void init() {
     
     }
