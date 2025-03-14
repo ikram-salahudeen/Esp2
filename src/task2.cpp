@@ -1,3 +1,4 @@
+/*
 #include "mbed.h"
 #include "C12832.h"
 #include "td1.h"
@@ -45,3 +46,4 @@ void task2()
     }
 }
 
+*/

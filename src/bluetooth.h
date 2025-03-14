@@ -1,9 +1,9 @@
+#pragma once
 #include "mbed.h"
 #include <vector>
 #include <stdlib.h>
 #include <map>
 #include <string>
-
 
 struct Bluetooth {
     char buffer[256];
@@ -112,7 +112,6 @@ struct Bluetooth {
             recieved_byte(serial.getc());
         }
     }
-
-    
-
 };
+
+extern Bluetooth bt;

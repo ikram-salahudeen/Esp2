@@ -2,12 +2,11 @@
 #include "pins.h"
 
 
-Wheel L(MOTOR_L_PWM, MOTOR_L_DIR, MOTOR_L_BIPOLAR, ENCODER_L_A, ENCODER_L_B, PWM_FREQUENCY);
-Wheel R(MOTOR_R_PWM, MOTOR_R_DIR, MOTOR_R_BIPOLAR, ENCODER_R_A, ENCODER_R_B, PWM_FREQUENCY);
+
 
 C12832 lcd(D11, D13, D12, D7, D10);
 //Bluetooth bt(PA_11, PA_12, 9600)
-Bluetooth bt(PA_11, PA_12, 9600);
+Bluetooth bt(USBTX, USBRX, 9600);
 
 Timer timer;
 
@@ -18,7 +17,7 @@ char buffer[256];
 int buffer_length = 0;
 
 
-int main() {
+void td1() {
     timer.start();
 
     DigitalIn up(A2);
@@ -51,3 +50,6 @@ int main() {
         }
     }
 }
+void task2() {};
+void task3() {};
+void task4() {};

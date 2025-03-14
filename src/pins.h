@@ -24,6 +24,10 @@
 #define ENCODER_R_A PB_13
 #define ENCODER_R_B PB_3
 
+<<<<<<< HEAD
 #define LINE_SENSE_PINS {PC_1, PB_0, PA_4, PA_1 ,PA_0}
+=======
+#define LINE_SENSE_PINS NC, NC, NC, NC, NC
+>>>>>>> 24166609e7c261e12fbfb11ac462a29de5398b50
 
 #define LINE_LED_PINS {NC, NC, NC, NC, NC}

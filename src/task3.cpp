@@ -1,4 +1,4 @@
-#include "td1.h"
+/*#include "td1.h"
 
 int L_pulses_count = 0; // count for change in pulses
 int R_pulses_count = 0;
@@ -38,4 +38,4 @@ void task3() {
         lcd.locate(8,20);
         lcd.printf("L RPM: %02.2f   R RPM: %02.2f", L_rpm, R_rpm); // print rpm
     }
-}
+}*/

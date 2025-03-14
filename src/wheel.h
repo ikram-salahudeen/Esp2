@@ -1,6 +1,9 @@
 #include "mbed.h"
+#include "bluetooth.h"
 #include "QEI.h"
 #include "C12832.h"
+#include "td1.h"
+#include "pid.h"
 
 #define PWM_FREQUENCY 30000
 #define WHEEL_DIAMETER 75
@@ -26,14 +29,18 @@ class Wheel {
     Mode mode;
     float frequency;
     
-    
-   
+    float targetSpeed;
+    float currentSpeed;
+    Ticker speedTicker;
+    bool useSpeedControl;
+    float Ts;
+    PID pid;
 
 public:
-
     PwmOut pwm;
     DigitalOut direction;
     DigitalOut bipolar;
+    
 
      QEI encoder;
 
@@ -42,18 +49,25 @@ public:
         PinName encoder1, PinName encoder2,
         float frequency = 10000):
         pwm(pwmPin), direction(directionPin), bipolar(bipolarPin), frequency(frequency),
-        encoder(encoder1, encoder2, NC, 256, QEI::X4_ENCODING), power(0), useSpeedControl(false) {
+        encoder(encoder1, encoder2, NC, 256, QEI::X4_ENCODING), power(0), useSpeedControl(false),
+        pid(&bt.params["Kp"], &bt.params["Ki"], &bt.params["Kd"], &bt.params["Ts"], &targetSpeed, &currentSpeed,
+            &power, -1, 1, callback(this, &Wheel::calculateSpeed),callback(this, &Wheel::update)), Ts(0.01)
+    {
         pwm.period(1/frequency);
-        speedTicker.attach(callback(this, &Wheel::speedControlISR), SPEED_CONTROL_PERIOD_MS / 1000.0f);
-        //pwm.suspend();
+        
+        bt.params["Ts"] = 0.01;
+        bt.params["Kp"] = 0;
+        bt.params["Ki"] = 0;
+        bt.params["Kd"] = 0;
     };
 
     
     void setPower(float newPower) {
         power = newPower;
-        useSpeedControl = false;
+        pid.stop();
         update();
     }
+
     float getPower() { return power; };
 
     void setMode(Mode newMode){
@@ -68,41 +82,27 @@ public:
             pwm.period(1/frequency);
         }
     }
-    float getFrequncy() { return frequency; };
+    float getFreqeuncy() { return frequency; };
 
-    void speedControlISR() {
-        if (useSpeedControl == false) return;
+    void calculateSpeed() {
+        int pulses_count = 0; // count for change in pulses
+        int initial_pulses = 0;
+        const float wheel_diameter = 0.08; // defined for testing
+        const float PI = 3.141592653589793f;
+        const float gearbox_ratio = 16.0;
 
-        static int previousPulses = 0;
-        static float previousTime = 0;
+        pulses_count = encoder.getPulses() - initial_pulses;
+        initial_pulses = encoder.getPulses();
 
-        float newTime = timer.read();
-        int newPulses = encoder.getPulses();
-
-        previousPulses = newPulses;
-        previousTime = newTime;
-
-
-        float calculatedSpeed = ((newPulses - previousPulses) * WHEEL_DIAMETER * 3.14f) / (256 * (newTime - previousTime));
-        float speedError = targetSpeed - calculatedSpeed;
-
-        static float integral = 0;
-        integral += speedError * (SPEED_CONTROL_PERIOD_MS / 1000.0f);
-
-        float stimulus = SPEED_KP * speedError + SPEED_KI * integral;
-
-        setPower(stimulus);
+        float rpm = (pulses_count * (60.0 / bt.params["Ts"])) / 256.0; // rpm calculation
+        currentSpeed = (PI * (rpm * 60.0) * wheel_diameter) / gearbox_ratio;
     }
 
-    void setSpeed(float speed) {
-        useSpeedControl = true;
-        targetSpeed = speed;
+    float speed() {
+        return currentSpeed;
     }
 
 private:
-    float targetSpeed;
-    Ticker speedTicker;
-    bool useSpeedControl;
 
     void update() {
         if (mode == Bipolar) {
