@@ -1,4 +1,4 @@
-#include "td1.h"
+/*#include "td1.h"
 #include "pins.h"
 #include "C12832.h"
 #include <cstdio>
@@ -20,7 +20,7 @@ void test() {
     };
 }
 
-void turn(int dir /* 1 right, -1 left */, float modifier) {
+void turn(int dir , float modifier) {
     float distance =  3 * (3.14f / 2) * TURNING_RADIUS;
     if (dir == 1) { 
         R.setPower(0.6);
@@ -57,7 +57,7 @@ void turn(int dir /* 1 right, -1 left */, float modifier) {
 }
 
 
-void forward(float distance /* in mm */) {
+void forward(float distance) {
     L.setPower(0.5);
     R.setPower(0.5);
     // distance = (pulses / (256*15)) * (WHEEL_DIAMETER * 3.14f)
@@ -79,7 +79,7 @@ void forward(float distance /* in mm */) {
 }
 
 
-void rev(float distance /* in mm */) {
+void rev(float distance /* in mm ) {
     L.setPower(-0.5);
     R.setPower(-0.5);
     // distance = (pulses / (256*15)) * (WHEEL_DIAMETER * 3.14f)
@@ -188,3 +188,4 @@ void task4()
     
 
 }
+*/

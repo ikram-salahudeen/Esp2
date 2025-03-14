@@ -1,17 +1,23 @@
 #include "td1.h"
+#include "rtos.h"
+#include "RtosTimer.h"
 #include "Controller.h"
 
 const AnalogIn lineSensors[5] = {LINE_SENSE_PINS};
 const DigitalOut lineLeds[5] = {LINE_SENSE_PINS};
 
 
+Controller ctrl;
+
+void loop() {
+
+}
 
 int main() {
-    Controller ctrl;
+    RtosTimer timer (&loop);
 
     ctrl.init();
 
-    while(true) {
-        ctrl.loop();
-    }
+    timer.start(10);
+    
 }

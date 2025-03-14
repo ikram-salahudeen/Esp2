@@ -1,3 +1,4 @@
+#pragma once
 #include "wheel.h"
 #include "bluetooth.h"
 
@@ -66,10 +67,7 @@ public:
  
 };
 
-extern Wheel L;
-extern Wheel R;
 extern C12832 lcd;
-extern Bluetooth bt;
 
 extern SamplingPotentiometer potLeft;
 extern SamplingPotentiometer potRight;

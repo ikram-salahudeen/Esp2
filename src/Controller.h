@@ -19,6 +19,13 @@ struct Controller {
     */
 
     Wheel L, R;
+
+    Controller():
+        L(MOTOR_L_PWM, MOTOR_L_DIR, MOTOR_L_BIPOLAR, ENCODER_L_A, ENCODER_L_B, PWM_FREQUENCY),
+        R(MOTOR_R_PWM, MOTOR_R_DIR, MOTOR_R_BIPOLAR, ENCODER_R_A, ENCODER_R_B, PWM_FREQUENCY)
+        {
+
+        }
     
 
     void init() {
@@ -35,8 +42,7 @@ struct Controller {
                 lcd.rect(1 + i*7, 1, 5, 5, 1);
             }
         }
-
-        wait_us(10000000);
+        printf("Speed %f %f", L.speed(), R.speed());
     }
 
 };
