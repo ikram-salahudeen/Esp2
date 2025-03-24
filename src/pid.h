@@ -1,8 +1,8 @@
 #include "mbed.h"
+#include "bluetooth.h"
 
 class PID {
     Ticker ticker;
-    float Ts;
 public:
     const float* Kp;
     const float* Ki;
@@ -16,28 +16,30 @@ public:
     float* stimulus;
     float stimulusMin, stimulusMax;
 
-    mbed::Callback<void()> currentCallback;
-    mbed::Callback<void()> updateCallback;
-
-    PID(const float* Kp, const float* Ki, const float* Kd, const float* Ts_ptr, const float* target, const float* current,
-        float* stimulus, float stimulusMin, float stimulusMax,  mbed::Callback<void()> currentCallback, mbed::Callback<void()> updateCallback):
-        Kp(Kp), Ki(Ki), Kd(Kd), Ts_ptr(Ts_ptr), Ts(*Ts_ptr), target(target), current(current),
-        stimulus(stimulus), stimulusMin(stimulusMin), stimulusMax(stimulusMax), updateCallback(updateCallback), currentCallback(currentCallback)
+    PID(const float* Kp, const float* Ki, const float* Kd, const float* Ts, const float* target, const float* current,
+        float* stimulus, float stimulusMin, float stimulusMax):
+        Kp(Kp), Ki(Ki), Kd(Kd), Ts_ptr(Ts), target(target), current(current),
+        stimulus(stimulus), stimulusMin(stimulusMin), stimulusMax(stimulusMax)
         {}
 
     void start() {
-        Ts = *Ts_ptr;
         ticker.detach();
-        ticker.attach(callback(this, &PID::update), Ts);
+        //ticker.attach(callback(this, &PID::update), Ts);
     }
 
     void stop() {
         ticker.detach();
     }
 
-private:
     void update() {
-        currentCallback();
+        int time_us = 0;
+        static int initial_time_us = 0;
+
+        time_us = timer.read_us() - initial_time_us;
+        initial_time_us = timer.read_us();
+
+        float Ts = time_us / 1000000.0f; 
+
         // Remember previous values
         static float u_tk = 0;
         static float u_tk_1 = 0;
@@ -48,10 +50,11 @@ private:
         static float e_tk_2 = 0;
 
         // Error
-        e_tk = *target - *current;
+        e_tk = *current - *target;
 
         // Equation for PID control in discrete time
-        u_tk = u_tk_1 + e_tk * (*Kp + *Ki * Ts + *Kd / Ts) + e_tk_1 * (-*Kp - 2*(*Kd) / Ts) + (*Kd) * e_tk_2 / Ts;
+        u_tk = u_tk_1 + e_tk * ((*Kp) + (*Ki) * (Ts) + (*Kd) / (Ts)) + e_tk_1 * (-(*Kp) - 2*(*Kd) / (Ts)) + (*Kd) * e_tk_2 / (Ts);
+        
         
 
         // Clamp to min or max values
@@ -68,9 +71,6 @@ private:
         u_tk_1 = u_tk;
 
         // If Ts has changed re-attach the ISR with new Ts
-        if (*Ts_ptr != Ts) start();
-
-        // Call callback
-        updateCallback();
+        //if (*Ts_ptr != Ts) start();
     }
 };

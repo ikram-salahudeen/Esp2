@@ -1,34 +1,59 @@
 #pragma once
 #include "mbed.h"
+#include <cstring>
+#include <queue>
 #include <vector>
 #include <stdlib.h>
 #include <map>
 #include <string>
 
+extern Timer timer;
+
 struct Bluetooth {
-    char buffer[256];
+    char buffer[1024];
     int buffer_length;
+    std::vector<std::string> commands;
 
     bool expecting_AT_output;
     
     std::map<std::string, float> params;
+    std::map<std::string, float> outputs;
         
+    RawSerial serial;
+    
 
-    Serial serial;
     Bluetooth(PinName tx, PinName rx, int baud): serial(tx, rx, baud), buffer_length(0), expecting_AT_output(false) {
         serial.attach(callback(this, &Bluetooth::recieved_data_isr));
-        serial.printf("Hello\n");
+        
     };
 
-    // Proccess a command in the form "lhs=float"
-    void recieved_command(std::string command) {
-        // Is it an AT command?
-        if (command.length() >= 2 && command[0] == 'A' && command[1] == 'T') {
-            // AT command detected, repeat what user said onto the TX pin
-            serial.printf("%s", command.c_str());
-            expecting_AT_output = true;
-            return;
+    void report() {
+        // Report data in the outputs map in Arduino serial plotter format e.g "Var1:12.0,Var2,1.0\n"
+        for (std::map<std::string, float>::iterator it = outputs.begin(); it != outputs.end(); it++) {
+            serial.printf("%s:%f,", it->first.c_str(), it->second);
         }
+        serial.printf("\n");
+    }
+
+
+
+    void process() {
+        int start = 0;
+        for (int i = 0; i < buffer_length; i++) {
+            if (buffer[i] == ';' || buffer[i] == '\n') {
+                parse_command(std::string(buffer + start, i-start));
+                start = i + 1;
+            }
+        }
+
+        buffer_length -= start;
+        std::memcpy(buffer, buffer + start, buffer_length);
+    }
+
+    // Proccess a command which should be in the form "lhs=float"
+    void parse_command(std::string command) {
+        serial.printf("Received command '%s'.\n", command.c_str());
+
 
         // Parse the expersion var_name=float
 
@@ -46,6 +71,7 @@ struct Bluetooth {
                 break;
             }
         }
+        
 
         if (success == false) {
             serial.printf("\n>Invalid command, listing params:\n");
@@ -82,35 +108,16 @@ struct Bluetooth {
         
     }
 
-    void recieved_byte(char new_byte) {
-
-        // When expecting_AT_output==true it is not the user typing, it's the response of the module
-        if (expecting_AT_output) {
-            // Put whatevers on RX onto TX
-            serial.putc(new_byte);
-            if (new_byte == '\n') expecting_AT_output = false;
-            return;
-        }
-
-        
-        buffer[buffer_length] = new_byte;
-        buffer_length++;
-        
-        if (buffer_length >= sizeof(buffer)) {
-            buffer_length = 0;
-        }
-
-        if (new_byte == '\n' || new_byte == ';') {
-            recieved_command(std::string(buffer, buffer_length - 1));
-            buffer_length = 0;
-        }
-    }
-
     // Called everytime there is a new byte available to read on the UART pins
     void recieved_data_isr() {
         while (serial.readable()) {
-            recieved_byte(serial.getc());
+            char new_byte = serial.getc();
+            if (buffer_length < sizeof(buffer)) {
+                buffer[buffer_length] = new_byte;
+                buffer_length++;
+            }
         }
+        
     }
 };
 
