@@ -60,6 +60,27 @@ struct Controller {
         
     }
 
+    void led_sample() {
+        // Turn on the leds one at a time, wait a bit and read the value
+        // This will be run 5 times as fast as the other functions
+    }
+
+    void process_line() {
+        // Weighted average, immunity to ambient light
+    }
+
+    void follow() {
+        // Stop if needed
+    }
+
+    void pid_update() {
+        // Do the calculations for the two control loops:
+        // 1) Adjust the direction to try to minimise distance to line
+        // 2) Adjust motor power to regulate spped
+    }
+
+
+
     void line() {
         // Read sensor values (normalized: 0.0 - 1.0)
         float sensor1_reading = lineSense0.read();
