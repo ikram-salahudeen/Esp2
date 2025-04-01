@@ -53,8 +53,13 @@ public:
         e_tk = *current - *target;
 
         // Equation for PID control in discrete time
-        u_tk = u_tk_1 + e_tk * ((*Kp) + (*Ki) * (Ts) + (*Kd) / (Ts)) + e_tk_1 * (-(*Kp) - 2*(*Kd) / (Ts)) + (*Kd) * e_tk_2 / (Ts);
+        u_tk = u_tk_1 + e_tk * (*Kp + *Ki * Ts + *Kd / Ts) + e_tk_1 * (-*Kp - 2*(*Kd) / Ts) + (*Kd) * e_tk_2 / Ts;
+        // u_tk_1 + e_tk * (*Kp ) + e_tk_1 * (-*Kp )
         
+        bt.outputs["u_tk"] = u_tk;
+        bt.outputs["e_tk"] = e_tk;
+        bt.outputs["myKp"] = *Kp;
+        bt.outputs["myTs"] = Ts;
         
 
         // Clamp to min or max values

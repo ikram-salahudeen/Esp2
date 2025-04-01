@@ -1,12 +1,12 @@
 #include "mbed.h"
 
-#define MOTOR_L_BIPOLAR PC_5
+#define MOTOR_L_BIPOLAR PC_2
 #define MOTOR_L_DIR NC
-#define MOTOR_L_PWM PA_15
+#define MOTOR_L_PWM PB_7
 
-#define MOTOR_R_BIPOLAR PC_2
+#define MOTOR_R_BIPOLAR PC_3
 #define MOTOR_R_DIR NC
-#define MOTOR_R_PWM PB_7
+#define MOTOR_R_PWM PA_15
 
 #define ENABLE PB_2
 

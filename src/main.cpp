@@ -10,12 +10,7 @@ Controller ctrl;
 Timer timer;
 
 
-void loop() {
-   // ctrl.loop();
-}
-
 int main() {
-    ctrl.init();
     timer.start();
 
     while (true) {

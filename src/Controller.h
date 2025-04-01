@@ -50,14 +50,13 @@ struct Controller {
         lineLed3(LINE_LED_3),
         lineLed4(LINE_LED_4)
         {
-            bt.params["Ts"];
-        }
-    
-
-    void init() {
+        bt.params["Ts"] = 0.01;
         bt.params["L"] = 0;
         bt.params["R"] = 0;
         
+    }
+    
+    void start() {
     }
 
     void led_sample() {
@@ -105,19 +104,20 @@ struct Controller {
                                 1 * sensor4_reading + 2 * sensor5_reading) / sum;
         }
 
+        if (bt.params["Log"] == 1) {
+            bt.outputs["Sensor 1"] = sensor1_reading;
+            bt.outputs["Sensor 2"] = sensor2_reading;
+            bt.outputs["Sensor 3"] = sensor3_reading;
+            bt.outputs["Sensor 4"] = sensor4_reading;
+            bt.outputs["Sensor 5"] = sensor5_reading;
 
-        bt.outputs["Sensor 1"] = sensor1_reading;
-        bt.outputs["Sensor 2"] = sensor2_reading;
-        bt.outputs["Sensor 3"] = sensor3_reading;
-        bt.outputs["Sensor 4"] = sensor4_reading;
-        bt.outputs["Sensor 5"] = sensor5_reading;
-
-        bt.outputs["WA"] = weighted_average;
+            bt.outputs["WA"] = weighted_average;
+        }
     }
 
     void loop() {
 
-        line();
+        //line();
         //bt.serial.printf("Line: %f %f %f %f %f", readings[0], readings[1], readings[2], readings[3], readings[4]);
 
        
@@ -144,7 +144,11 @@ struct Controller {
         bt.outputs["-1"] = -1;
         bt.outputs["1"] = 1;
 
-        bt.report();
+        static unsigned n= 0;
+        if (n%10 == 0) {
+            bt.report();
+        }
+        n++;
     }
 
 };
