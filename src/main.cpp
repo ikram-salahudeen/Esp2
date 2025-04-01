@@ -17,7 +17,6 @@ int main() {
 
         ctrl.loop();
         bt.process();
-        wait_us(bt.params["Ts"] * 1000000);
     }
     
 }

@@ -60,41 +60,86 @@ struct Controller {
     }
 
     void led_sample() {
+        float sample_time = bt.params["Ts"] / 5;
+
         // Turn on the leds one at a time, wait a bit and read the value
         // This will be run 5 times as fast as the other functions
         // Sensor 0 sampling
         lineLed0 = 1;             // Turn on sensor 0 IR emitter
-        wait_us(100);             // Delay 100μs for stabilization
+        wait_us(sample_time);             // Delay 100μs for stabilization
         readings[0] = lineSense0.read();  // Read analog value from sensor 0
         lineLed0 = 0;             // Turn off IR emitter
 
         // Sensor 1 sampling
         lineLed1 = 1;
-        wait_us(100);
+        wait_us(sample_time);
         readings[1] = lineSense1.read();
         lineLed1 = 0;
 
         // Sensor 2 sampling
         lineLed2 = 1;
-        wait_us(100);
+        wait_us(sample_time);
         readings[2] = lineSense2.read();
         lineLed2 = 0;
 
         // Sensor 3 sampling
         lineLed3 = 1;
-        wait_us(100);
+        wait_us(sample_time);
         readings[3] = lineSense3.read();
         lineLed3 = 0;
 
         // Sensor 4 sampling
         lineLed4 = 1;
-        wait_us(100);
+        wait_us(sample_time);
         readings[4] = lineSense4.read();
         lineLed4 = 0;
+
+        bt.outputs["Sense0"] = readings[0];
+        bt.outputs["Sense1"] = readings[1];
+        bt.outputs["Sense2"] = readings[2];
+        bt.outputs["Sense3"] = readings[3];
+        bt.outputs["Sense4"] = readings[4];
     }
 
     void process_line() {
-        // Weighted average, immunity to ambient light
+        // Normalise readings 0 = min, 1 = max;
+        float min = *std::min_element(&readings[0], &readings[5]);
+        float max = *std::max_element(&readings[0], &readings[5]);
+
+        for (int i = 0; i < 5; i++) {
+            readings[i] = (readings[i] - min) / (max - min);
+        }
+
+        /*
+        bt.outputs["NSense0"] = readings[0];
+        bt.outputs["NSense1"] = readings[1];
+        bt.outputs["NSense2"] = readings[2];
+        bt.outputs["NSense3"] = readings[3];
+        bt.outputs["NSense4"] = readings[4];*/
+
+        // Convert to digital
+        const float threshold = 0.5;
+        float numberOf1s = 0; // Number of sensors with readings > threshold.
+        
+        for (int i = 0; i < 5; i++) {
+            if (readings[i] > threshold) {
+                readings[i] = 1;
+            } else {
+                 readings[i] = 0;
+            }
+        }
+
+        // Average location of '1's
+        float sum = 0;
+         for (int i = 0; i < 5; i++) {
+            if (readings[i] == 1) {
+                sum += i - 2;
+            }
+        }
+
+        float lineLocation = sum / numberOf1s;
+
+        bt.outputs["line"] = lineLocation;
     }
 
     void follow() {
@@ -105,6 +150,20 @@ struct Controller {
         // Do the calculations for the two control loops:
         // 1) Adjust the direction to try to minimise distance to line
         // 2) Adjust motor power to regulate spped
+
+        L.setSpeed(bt.params["L"]);
+        L.calculateSpeed();
+        L.pid.update();
+        L.update();
+
+        R.setSpeed(bt.params["L"]);
+        R.calculateSpeed();
+        R.pid.update();
+        R.update();
+
+        bt.outputs["LSpeed"] = L.speed();
+        bt.outputs["LPower"] = L.getPower();
+        bt.outputs["LSetpoint"] = L.targetSpeed;
     }
 
 
@@ -145,30 +204,18 @@ struct Controller {
     }
 
     void loop() {
+        led_sample();
+        process_line();
+        pid_update();
 
-        //line();
-        //bt.serial.printf("Line: %f %f %f %f %f", readings[0], readings[1], readings[2], readings[3], readings[4]);
-
-       
-
-        R.setPower(0);
-
+        
+        // Set enable pin
         if (bt.params["En"] == 1) {
             enable = 1;
         } else {
             enable = 0;
         }
 
-        L.setSpeed(bt.params["L"]);
-
-        
-        L.calculateSpeed();
-        L.pid.update();
-        L.update();
-
-        bt.outputs["Speed"] = L.speed();
-        bt.outputs["Power"] = L.getPower();
-        bt.outputs["Setpoint"] = L.targetSpeed;
         
         bt.outputs["-1"] = -1;
         bt.outputs["1"] = 1;
