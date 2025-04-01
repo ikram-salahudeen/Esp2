@@ -161,9 +161,9 @@ struct Controller {
         R.pid.update();
         R.update();
 
-        bt.outputs["LSpeed"] = L.speed();
-        bt.outputs["LPower"] = L.getPower();
-        bt.outputs["LSetpoint"] = L.targetSpeed;
+        //bt.outputs["LSpeed"] = L.speed();
+        //bt.outputs["LPower"] = L.getPower();
+        //bt.outputs["LSetpoint"] = L.targetSpeed;
     }
 
 
@@ -217,8 +217,8 @@ struct Controller {
         }
 
         
-        bt.outputs["-1"] = -1;
-        bt.outputs["1"] = 1;
+        //bt.outputs["-1"] = -1;
+        //bt.outputs["1"] = 1;
 
         static unsigned n= 0;
         if (n%10 == 0) {
