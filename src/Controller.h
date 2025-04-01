@@ -62,6 +62,35 @@ struct Controller {
     void led_sample() {
         // Turn on the leds one at a time, wait a bit and read the value
         // This will be run 5 times as fast as the other functions
+        // Sensor 0 sampling
+        lineLed0 = 1;             // Turn on sensor 0 IR emitter
+        wait_us(100);             // Delay 100μs for stabilization
+        readings[0] = lineSense0.read();  // Read analog value from sensor 0
+        lineLed0 = 0;             // Turn off IR emitter
+
+        // Sensor 1 sampling
+        lineLed1 = 1;
+        wait_us(100);
+        readings[1] = lineSense1.read();
+        lineLed1 = 0;
+
+        // Sensor 2 sampling
+        lineLed2 = 1;
+        wait_us(100);
+        readings[2] = lineSense2.read();
+        lineLed2 = 0;
+
+        // Sensor 3 sampling
+        lineLed3 = 1;
+        wait_us(100);
+        readings[3] = lineSense3.read();
+        lineLed3 = 0;
+
+        // Sensor 4 sampling
+        lineLed4 = 1;
+        wait_us(100);
+        readings[4] = lineSense4.read();
+        lineLed4 = 0;
     }
 
     void process_line() {
