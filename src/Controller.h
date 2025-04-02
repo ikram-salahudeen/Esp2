@@ -5,7 +5,12 @@
 #include "bluetooth.h"
 
 
-
+enum State {
+    Stop = 0,
+    Go = 1,
+    Uturn = 2,
+    UturnPhase2 = 3
+};
 
 //extern const DigitalOut lineLeds[5];
 
@@ -13,7 +18,7 @@ struct Controller {
     /*
         Status variables
     */
-
+    State state;
     float desiredSpeed;
 
     /*
@@ -34,6 +39,7 @@ struct Controller {
     float readings[5];
     float lineLocation;  // Where it thinks the line is from the centre (-2 to +2)
     bool lineDetected;   // false if no line detected
+
 
     /*
         Direction PID
@@ -66,7 +72,8 @@ struct Controller {
         lineLed2(LINE_LED_2),
         lineLed3(LINE_LED_3),
         lineLed4(LINE_LED_4),
-        lineDetected(false)
+        lineDetected(false),
+        state(Go)
         {
         bt.params["Ts"] = 0.01;
         bt.params["L"] = 0;
@@ -159,7 +166,7 @@ struct Controller {
     }
 
     void follow() {
-        // Stop if needed
+        
     }
 
     void pid_update() {
@@ -167,9 +174,10 @@ struct Controller {
             Direction control loop
         */
 
-        if (lineDetected) { // Only do it if a line is dectected
+        if (lineDetected) { // Update direction if a line is dectected
             steerPid.update();
-            // Now we have direction, set the speed of each motor
+            bt.outputs["direction"] = direction;
+
             // Assume direction is the angular velocity in radians
             // v_l = v - (L * ω) / 2
             // v_r = v + (L * ω) / 2
@@ -177,7 +185,6 @@ struct Controller {
             L.setSpeed(desiredSpeed + (WHEEL_DIAMETER + direction) / 2)
             R.setSpeed(desiredSpeed - (WHEEL_DIAMETER + direction) / 2)
         };
-
 
         /*
             Speed control loop
@@ -197,9 +204,49 @@ struct Controller {
     }
 
     void loop() {
-        led_sample();
-        process_line();
-        pid_update();
+        switch (state) {
+        case (Stop): {
+             L.setPower(0);
+            R.setPower(0);
+        }
+           
+        break;
+        case (Go): {
+            led_sample();
+            process_line();
+            pid_update();
+        }
+        break;
+
+        case(Uturn): { // Rotate on the spot until the line is not detected, then go to phase2 
+            led_sample();
+            process_line();
+
+            if (lineDetected == false) state = UturnPhase2;
+
+            L.setSpeed(-0.5);
+            R.setSpeed(0.5);
+
+            lineDetected = false; // Stop pid_update from changing wheel speed
+            pid_update();
+        }
+        break;
+        case(UturnPhase2): { // Rotate on the spot until its on the line, then go
+            led_sample();
+            process_line();
+
+            if (lineDetected == true && lineLocation > -0.5) state = Go;
+
+            L.setSpeed(-0.5);
+            R.setSpeed(0.5);
+
+            lineDetected = false; // Stop pid_update from changing wheel speed
+            pid_update();
+        }
+        break;
+
+        }
+        
 
         
         // Set enable pin
@@ -208,10 +255,6 @@ struct Controller {
         } else {
             enable = 0;
         }
-
-        
-        //bt.outputs["-1"] = -1;
-        //bt.outputs["1"] = 1;
 
         static unsigned n= 0;
         if (n%10 == 0) {
