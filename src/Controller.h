@@ -3,13 +3,16 @@
 #include "pins.h"
 #include "rtos.h"
 #include "bluetooth.h"
+#include <cmath>
 
 
 enum State {
-    Stop = 0,
-    Go = 1,
-    Uturn = 2,
-    UturnPhase2 = 3
+    Go = 0, // Normal steering
+    Stop = 1, // Brake
+    UturnCW = 2, // Turn clockwise on the spot until the line is not detected, then go to 'findLineCW'
+    UturnCCW = 3,
+    findLineCW = 4, // Turn clockwise on the spot until it's on the line, then go to 'nextState'
+    findLineCCW = 5
 };
 
 //extern const DigitalOut lineLeds[5];
@@ -19,6 +22,7 @@ struct Controller {
         Status variables
     */
     State state;
+    State nextState;
     float desiredSpeed;
 
     /*
@@ -58,7 +62,7 @@ struct Controller {
     DigitalOut enable;
 
     Controller():
-        steerPid(&bt.params["DKp"], &bt.params["DKi"], &bt.params["DKd"], &lineLocationSetpoint, &lineLocation, &direction, &directionMin, &directionMin),
+        steerPid(&bt.params["DKp"], &bt.params["DKi"], &bt.params["DKd"], &lineLocationSetpoint, &lineLocation, &direction, directionMin, directionMin),
         L(MOTOR_L_PWM, MOTOR_L_DIR, MOTOR_L_BIPOLAR, ENCODER_L_A, ENCODER_L_B, PWM_FREQUENCY),
         R(MOTOR_R_PWM, MOTOR_R_DIR, MOTOR_R_BIPOLAR, ENCODER_R_A, ENCODER_R_B, PWM_FREQUENCY),
         enable(ENABLE), 
@@ -128,11 +132,15 @@ struct Controller {
             readings[i] = (readings[i] - min);
         }
 
-        
+        bt.outputs["Sense0"] = readings[0];
+        bt.outputs["Sense1"] = readings[1];
+        bt.outputs["Sense2"] = readings[2];
+        bt.outputs["Sense3"] = readings[3];
+        bt.outputs["Sense4"] = readings[4];
         
 
         // Convert to digital
-        const float threshold = 0.03;
+        const float threshold = 0.01;
         float numberOf1s = 0; // Number of sensors with readings > threshold.
         
         for (int i = 0; i < 5; i++) {
@@ -163,6 +171,7 @@ struct Controller {
         float lineLocation = sum / numberOf1s;
         
         bt.outputs["line"] = lineLocation;
+
     }
 
     void follow() {
@@ -173,7 +182,6 @@ struct Controller {
         /*
             Direction control loop
         */
-
         if (lineDetected) { // Update direction if a line is dectected
             steerPid.update();
             bt.outputs["direction"] = direction;
@@ -182,8 +190,8 @@ struct Controller {
             // v_l = v - (L * ω) / 2
             // v_r = v + (L * ω) / 2
 
-            L.setSpeed(desiredSpeed + (WHEEL_DIAMETER + direction) / 2)
-            R.setSpeed(desiredSpeed - (WHEEL_DIAMETER + direction) / 2)
+            L.setSpeed(desiredSpeed + (WHEEL_DIAMETER + direction) / 2);
+            R.setSpeed(desiredSpeed - (WHEEL_DIAMETER + direction) / 2);
         };
 
         /*
@@ -206,7 +214,7 @@ struct Controller {
     void loop() {
         switch (state) {
         case (Stop): {
-             L.setPower(0);
+            L.setPower(0);
             R.setPower(0);
         }
            
@@ -247,7 +255,7 @@ struct Controller {
 
         }
         
-        int btState = (int) std::round(bt.params["state"]);
+        int btState = (int) bt.params["state"];
         if (btState >= 0 && btState <= 3) state = static_cast<State>(btState);
         
         // Set enable pin
