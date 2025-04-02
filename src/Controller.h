@@ -5,7 +5,6 @@
 #include "bluetooth.h"
 #include <cmath>
 
-
 enum State {
     Go = 0, // Normal steering
     Stop = 1, // Brake
@@ -14,8 +13,6 @@ enum State {
     findLineCW = 4, // Turn clockwise on the spot until it's on the line, then go to 'nextState'
     findLineCCW = 5
 };
-
-//extern const DigitalOut lineLeds[5];
 
 struct Controller {
     /*
@@ -76,8 +73,14 @@ struct Controller {
         lineLed2(LINE_LED_2),
         lineLed3(LINE_LED_3),
         lineLed4(LINE_LED_4),
+        lineLocation(0),
         lineDetected(false),
-        state(Go)
+        state(Go),
+        nextState(Stop),
+        desiredSpeed(0),
+        directionMax(1),
+        directionMin(-1)
+        
         {
         bt.params["Ts"] = 0.01;
         bt.params["L"] = 0;
@@ -132,12 +135,20 @@ struct Controller {
             readings[i] = (readings[i] - min);
         }
 
-        bt.outputs["Sense0"] = readings[0];
-        bt.outputs["Sense1"] = readings[1];
-        bt.outputs["Sense2"] = readings[2];
-        bt.outputs["Sense3"] = readings[3];
-        bt.outputs["Sense4"] = readings[4];
+        if (bt.params["log"] == 0) {
+            bt.outputs["Sense0"] = readings[0];
+            bt.outputs["Sense1"] = readings[1];
+            bt.outputs["Sense2"] = readings[2];
+            bt.outputs["Sense3"] = readings[3];
+            bt.outputs["Sense4"] = readings[4];
+        }
         
+        float weightedAverage = 0;
+        for (int i = 0; i < 5; i++) { 
+            weightedAverage += (i-2) * readings[i];
+        }
+        weightedAverage /= 5;
+        bt.outputs["WA"] = weightedAverage;
 
         // Convert to digital
         const float threshold = 0.01;
@@ -151,6 +162,16 @@ struct Controller {
                  readings[i] = 0;
             }
         }
+
+        if (bt.params["log"] == 1) {
+            bt.outputs["DSense0"] = readings[0];
+            bt.outputs["DSense1"] = readings[1];
+            bt.outputs["DSense2"] = readings[2];
+            bt.outputs["DSense3"] = readings[3];
+            bt.outputs["DSense4"] = readings[4];
+        }
+
+        
 
         if (numberOf1s == 0) {
             // No line detected
@@ -183,37 +204,20 @@ struct Controller {
         // 4. IF ALL sensors < threshold value, do nothing, ELSE reset timer
         // 5. repeat 3 & 4, if timer reaches 2 seconds, interrupt -> stop motors and control loop
         
-        bool allBelowThreshold = true;
-        for (int i = 0; i < 5; i++) {
-            if (readings[i] >= threshold){
-                allBelowThreshold = false;
-                break;
-            }
-        }
+       static float startTime = 0;
+       const float timeout = 0.5;
 
-        if (allBelowThreshold) {
-            if (!timerStarted) {
-                elapsedTime = 0;
-                timer.attach(&timerCallback, 0.1);
-                timerStarted = True;
-            }
+        if (lineDetected) {
+            startTime = timer.read();
         }
-        else {
-            timer.detach();
-            timerStarted = false;
-            elapsedTime = 0;
-        }
+        float elapsedTime = timer.read() - startTime;
 
-        if (timerStarted && elapsedTime >= timeout) {
-            L.setPower(0);
-            R.setPower(0);
-            timer.detach();
-            timerStarted = false;
-            elapsedTime = 0;
+        if (elapsedTime >= timeout) {
+            state = Stop;
         }
     }
 
-    }
+    
 
     void pid_update() {
         /*
@@ -243,9 +247,11 @@ struct Controller {
         R.pid.update();
         R.update();
 
-        //bt.outputs["LSpeed"] = L.speed();
-        //bt.outputs["LPower"] = L.getPower();
-        //bt.outputs["LSetpoint"] = L.targetSpeed;
+        if (bt.params["log"] == 3) {
+            bt.outputs["LSpeed"] = L.speed();
+            bt.outputs["LPower"] = L.getPower();
+            bt.outputs["LSetpoint"] = L.targetSpeed;
+        }
     }
 
     void loop() {
@@ -263,11 +269,24 @@ struct Controller {
         }
         break;
 
-        case(Uturn): { // Rotate on the spot until the line is not detected, then go to phase2 
+        case(UturnCW): { // Rotate CW on the spot until the line is not detected, then go to findLineCW
             led_sample();
             process_line();
 
-            if (lineDetected == false) state = UturnPhase2;
+            if (lineDetected == false) state = findLineCW;
+
+            L.setSpeed(0.5);
+            R.setSpeed(-0.5);
+
+            lineDetected = false; // Stop pid_update from changing wheel speed
+            pid_update();
+        }
+        break;
+        case(UturnCCW): { // Rotate CCW on the spot until the line is not detected, then go to findLineCCw 
+            led_sample();
+            process_line();
+
+            if (lineDetected == false) state = findLineCCW;
 
             L.setSpeed(-0.5);
             R.setSpeed(0.5);
@@ -276,11 +295,25 @@ struct Controller {
             pid_update();
         }
         break;
-        case(UturnPhase2): { // Rotate on the spot until its on the line, then go
+        case(findLineCW): { // Rotate CW on the spot until its on the line, then go to nextState
             led_sample();
             process_line();
 
-            if (lineDetected == true && lineLocation > -0.5) state = Go;
+            if (lineDetected == true && lineLocation <= 0.5 && lineLocation >= -0.5) state = nextState;
+
+            L.setSpeed(-0.5);
+            R.setSpeed(0.5);
+
+            lineDetected = false; // Stop pid_update from changing wheel speed
+            pid_update();
+        }
+        break;
+
+        case(findLineCCW): { // Rotate on the spot until its on the line, then go
+            led_sample();
+            process_line();
+
+            if (lineDetected == true && lineLocation > -0.5) state = nextState;
 
             L.setSpeed(-0.5);
             R.setSpeed(0.5);
@@ -292,8 +325,12 @@ struct Controller {
 
         }
         
-        int btState = (int) bt.params["state"];
-        if (btState >= 0 && btState <= 3) state = static_cast<State>(btState);
+        //Update the states from bluetooth
+        int btState = (int) bt.params["s"];
+        if (btState >= 0 && btState <= 5) state = static_cast<State>(btState);
+
+        btState = (int) bt.params["n"];
+        if (btState >= 0 && btState <= 5) nextState = static_cast<State>(btState);
         
         // Set enable pin
         if (bt.params["En"] == 1) {
@@ -302,7 +339,7 @@ struct Controller {
             enable = 0;
         }
 
-        static unsigned n= 0;
+        static unsigned n = 0;
         if (n%10 == 0) {
             bt.report();
         }

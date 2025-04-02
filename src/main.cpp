@@ -14,7 +14,6 @@ int main() {
     timer.start();
 
     while (true) {
-
         ctrl.loop();
         bt.process();
     }

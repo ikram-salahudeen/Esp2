@@ -94,6 +94,7 @@ public:
         int pulses_count = 0; // count for change in pulses
         static int initial_pulses = 0;
 
+        bt.outputs["initial"] = encoder.getPulses();
         pulses_count = encoder.getPulses() - initial_pulses;
         initial_pulses = encoder.getPulses();
 
@@ -102,6 +103,9 @@ public:
 
         time_us = timer.read_us() - initial_time_us;
         initial_time_us = timer.read_us();
+
+        bt.outputs["current"] = encoder.getPulses();
+        bt.outputs["pc"] = pulses_count;
 
         currentSpeed = (pulses_count / 1024.0f) * PI * wheel_diameter * (1000000.0f / time_us);//(PI * (rpm * 60.0) * wheel_diameter) / gearbox_ratio;
     }

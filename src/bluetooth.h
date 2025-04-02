@@ -32,6 +32,7 @@ struct Bluetooth {
         for (std::map<std::string, float>::iterator it = outputs.begin(); it != outputs.end(); it++) {
             serial.printf("%s:%f,", it->first.c_str(), it->second);
         }
+        outputs.clear();
         serial.printf("\n");
     }
 
@@ -108,10 +109,26 @@ struct Bluetooth {
         
     }
 
+    
+
     // Called everytime there is a new byte available to read on the UART pins
     void recieved_data_isr() {
         while (serial.readable()) {
             char new_byte = serial.getc();
+
+            if (new_byte == '!') {
+                params["s"] = 0;
+            }
+
+            if (new_byte == '@') {
+                params["s"] = 1;
+            }
+
+            if (new_byte == '#') {
+                params["s"] = 2;
+            }
+
+
             if (buffer_length < sizeof(buffer)) {
                 buffer[buffer_length] = new_byte;
                 buffer_length++;
