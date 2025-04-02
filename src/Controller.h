@@ -166,7 +166,7 @@ struct Controller {
     }
 
     void follow() {
-        
+
     }
 
     void pid_update() {
@@ -247,7 +247,8 @@ struct Controller {
 
         }
         
-
+        int btState = (int) std::round(bt.params["state"]);
+        if (btState >= 0 && btState <= 3) state = static_cast<State>(btState);
         
         // Set enable pin
         if (bt.params["En"] == 1) {
