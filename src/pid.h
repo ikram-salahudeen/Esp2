@@ -7,8 +7,6 @@ public:
     const float* Kp;
     const float* Ki;
     const float* Kd;
-    
-    const float* Ts_ptr;
 
     const float* target;
     const float* current;
@@ -16,9 +14,9 @@ public:
     float* stimulus;
     float stimulusMin, stimulusMax;
 
-    PID(const float* Kp, const float* Ki, const float* Kd, const float* Ts, const float* target, const float* current,
+    PID(const float* Kp, const float* Ki, const float* Kd, const float* target, const float* current,
         float* stimulus, float stimulusMin, float stimulusMax):
-        Kp(Kp), Ki(Ki), Kd(Kd), Ts_ptr(Ts), target(target), current(current),
+        Kp(Kp), Ki(Ki), Kd(Kd), target(target), current(current),
         stimulus(stimulus), stimulusMin(stimulusMin), stimulusMax(stimulusMax)
         {}
 
@@ -55,11 +53,6 @@ public:
         // Equation for PID control in discrete time
         u_tk = u_tk_1 + e_tk * (*Kp + *Ki * Ts + *Kd / Ts) + e_tk_1 * (-*Kp - 2*(*Kd) / Ts) + (*Kd) * e_tk_2 / Ts;
         // u_tk_1 + e_tk * (*Kp ) + e_tk_1 * (-*Kp )
-        
-        bt.outputs["u_tk"] = u_tk;
-        bt.outputs["e_tk"] = e_tk;
-        bt.outputs["myKp"] = *Kp;
-        bt.outputs["myTs"] = Ts;
         
 
         // Clamp to min or max values

@@ -33,7 +33,6 @@ public:
     float currentSpeed;
     Ticker speedTicker;
     bool useSpeedControl;
-    float Ts;
     PID pid;
 
     PwmOut pwm;
@@ -50,8 +49,8 @@ public:
         float frequency = 10000):
         pwm(pwmPin), direction(directionPin), bipolar(bipolarPin), frequency(frequency),
         encoder(encoder1, encoder2, NC, 256, QEI::X4_ENCODING), power(0), useSpeedControl(false),
-        pid(&bt.params["Kp"], &bt.params["Ki"], &bt.params["Kd"], &bt.params["Ts"], &targetSpeed, &currentSpeed,
-            &power, -1, 1), Ts(0.01)
+        pid(&bt.params["Kp"], &bt.params["Ki"], &bt.params["Kd"], &targetSpeed, &currentSpeed,
+            &power, -1, 1)
     {
         pwm.period(1/frequency);
         
@@ -104,8 +103,6 @@ public:
         time_us = timer.read_us() - initial_time_us;
         initial_time_us = timer.read_us();
 
-
-        float rpm = (pulses_count * (60.0 / bt.params["Ts"])) / 256.0; // rpm calculation
         currentSpeed = (pulses_count / 1024.0f) * PI * wheel_diameter * (1000000.0f / time_us);//(PI * (rpm * 60.0) * wheel_diameter) / gearbox_ratio;
     }
 
