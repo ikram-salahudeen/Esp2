@@ -167,6 +167,43 @@ struct Controller {
 
     void follow() {
 
+        // stop the buggy if no line detected
+        // 1. get sensor values
+        // 2. IF ALL sensors < threshold value, start timer
+        // 3. exit & get sensor values again
+        // 4. IF ALL sensors < threshold value, do nothing, ELSE reset timer
+        // 5. repeat 3 & 4, if timer reaches 2 seconds, interrupt -> stop motors and control loop
+        
+        bool allBelowThreshold = true;
+        for (int i = 0; i < 5; i++) {
+            if (readings[i] >= threshold){
+                allBelowThreshold = false;
+                break;
+            }
+        }
+
+        if (allBelowThreshold) {
+            if (!timerStarted) {
+                elapsedTime = 0;
+                timer.attach(&timerCallback, 0.1);
+                timerStarted = True;
+            }
+        }
+        else {
+            timer.detach();
+            timerStarted = false;
+            elapsedTime = 0;
+        }
+
+        if (timerStarted && elapsedTime >= timeout) {
+            L.setPower(0);
+            R.setPower(0);
+            timer.detach();
+            timerStarted = false;
+            elapsedTime = 0;
+        }
+    }
+
     }
 
     void pid_update() {
