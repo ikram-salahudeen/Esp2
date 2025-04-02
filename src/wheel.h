@@ -86,26 +86,23 @@ public:
     }
     float getFreqeuncy() { return frequency; };
 
+    int initial_pulses;
+    int initial_time_us;
     void calculateSpeed() {
         const float wheel_diameter = 0.08; // defined for testing
         const float PI = 3.141592653589793f;
         const float gearbox_ratio = 16.0;
 
         int pulses_count = 0; // count for change in pulses
-        static int initial_pulses = 0;
 
-        bt.outputs["initial"] = encoder.getPulses();
         pulses_count = encoder.getPulses() - initial_pulses;
         initial_pulses = encoder.getPulses();
 
         int time_us = 0;
-        static int initial_time_us = 0;
 
         time_us = timer.read_us() - initial_time_us;
         initial_time_us = timer.read_us();
 
-        bt.outputs["current"] = encoder.getPulses();
-        bt.outputs["pc"] = pulses_count;
 
         currentSpeed = (pulses_count / 1024.0f) * PI * wheel_diameter * (1000000.0f / time_us);//(PI * (rpm * 60.0) * wheel_diameter) / gearbox_ratio;
     }

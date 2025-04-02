@@ -85,14 +85,15 @@ struct Controller {
         bt.params["Ts"] = 0.01;
         bt.params["L"] = 0;
         bt.params["R"] = 0;
-        
+        L.setMode(Bipolar);
+        R.setMode(Bipolar);
     }
     
     void start() {
     }
 
     void led_sample() {
-        float sample_time = bt.params["Ts"] / 5;
+        float sample_time = 1000000.0f * bt.params["Ts"] / 5.0f;
 
         // Turn on the leds one at a time, wait a bit and read the value
         // This will be run 5 times as fast as the other functions
@@ -235,6 +236,9 @@ struct Controller {
             R.setSpeed(desiredSpeed - (WHEEL_DIAMETER + direction) / 2);
         };
 
+        L.setSpeed(bt.params["L"]);
+        R.setSpeed(bt.params["L"]);
+
         /*
             Speed control loop
         */
@@ -249,7 +253,10 @@ struct Controller {
 
         if (bt.params["log"] == 3) {
             bt.outputs["LSpeed"] = L.speed();
+            bt.outputs["RSpeed"] = R.speed();
             bt.outputs["LPower"] = L.getPower();
+            bt.outputs["RPower"] = R.speed();
+            bt.outputs["Renc"] = R.encoder.getPulses();
             bt.outputs["LSetpoint"] = L.targetSpeed;
         }
     }
@@ -339,9 +346,10 @@ struct Controller {
             enable = 0;
         }
 
-        static unsigned n = 0;
+        static int n = 0;
         if (n%10 == 0) {
-            bt.report();
+
+        bt.report();
         }
         n++;
     }
